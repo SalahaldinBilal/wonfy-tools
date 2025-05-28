@@ -9,21 +9,6 @@ use wasm_bindgen::{JsValue, prelude::wasm_bindgen};
 
 use crate::tool::stitcher::{CheckDirection, ImageStitcherBuilder, MatchMode, Order, Position};
 
-fn encode_image_as<P: image::Pixel, Container>(
-    image: &ImageBuffer<P, Container>,
-    format: ImageFormat,
-) -> ImageResult<Vec<u8>>
-where
-    P: image::Pixel + PixelWithColorType,
-    P: image::Pixel,
-    [P::Subpixel]: EncodableLayout,
-    Container: Deref<Target = [P::Subpixel]>,
-{
-    let mut bytes: Cursor<Vec<u8>> = Cursor::new(Vec::new());
-    image.write_to(&mut bytes, format)?;
-    Ok(bytes.into_inner())
-}
-
 #[derive(Debug)]
 pub enum PreviewData {
     Resize(f64),
