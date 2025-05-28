@@ -6,7 +6,19 @@ You can checkout deployed version with UI on https://tools.won.fyi
 #### You can install is as a cli
 
 ```sh
-cargo install wonfy-tools
+cargo install wonfy-tools --features cli
+```
+
+then use it as 
+
+```sh
+wonfy-tools-cli -f ./0.png ./1.png ...
+```
+
+can use `--help` to list all possible inputs for the cli
+
+```sh
+wonfy-tools-cli --help
 ```
 
 #### Or add it as a library
