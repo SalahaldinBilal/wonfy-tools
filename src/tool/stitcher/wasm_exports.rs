@@ -1,13 +1,17 @@
-use image::{
-    DynamicImage, EncodableLayout, ImageBuffer, ImageFormat, ImageReader, ImageResult,
-    PixelWithColorType, RgbaImage, imageops::FilterType,
+use crate::util::{
+    dhash::DHash,
+    image::{EncodeFormat, encode_image_as},
 };
-use js_sys::{Array, Uint8Array};
+use image::{
+    DynamicImage, EncodableLayout, ImageFormat, ImageReader, RgbaImage, imageops::FilterType,
+};
+use js_sys::{Array, BigInt, Uint8Array};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use std::{collections::VecDeque, io::Cursor, ops::Deref, str::FromStr};
+use std::{collections::VecDeque, io::Cursor, str::FromStr};
 use wasm_bindgen::{JsValue, prelude::wasm_bindgen};
 
 use crate::tool::stitcher::{CheckDirection, ImageStitcherBuilder, MatchMode, Order, Position};
+use image::Pixel;
 
 #[derive(Debug)]
 pub enum PreviewData {
@@ -148,6 +152,7 @@ pub fn stitch(
     match_mode: Option<String>,
     crop_padding: Option<u32>,
     preview: Option<Preview>,
+    format: EncodeFormat,
 ) -> Result<StitchReturn, String> {
     let direction = CheckDirection::from_str(&direction).map_err(|e| format!("{:#?}", e))?;
     let order = Order::from_str(&order).map_err(|e| format!("{:#?}", e))?;
@@ -217,7 +222,7 @@ pub fn stitch(
                 &DynamicImage::ImageRgba8(final_image)
                     .resize(width, height, FilterType::Lanczos3)
                     .to_rgba8(),
-                ImageFormat::Png,
+                format.into(),
             )
             .ok();
 
@@ -226,6 +231,48 @@ pub fn stitch(
         .flatten();
 
     Ok(StitchReturn::new(stitched_image, preview_image))
+}
+
+#[derive(Debug, Clone)]
+#[wasm_bindgen]
+pub struct ImageWithDHash(Vec<u8>, u64);
+
+impl ImageWithDHash {
+    pub fn new(image: Vec<u8>, hash: u64) -> Self {
+        Self(image, hash)
+    }
+}
+
+#[wasm_bindgen]
+impl ImageWithDHash {
+    #[wasm_bindgen(unchecked_return_type = "[Uint8Array, BigInt]")]
+    pub fn images(self) -> js_sys::Array {
+        let arr = js_sys::Array::new_with_length(2);
+        arr.set(0, JsValue::from(self.0));
+        arr.set(1, BigInt::new(&JsValue::from(self.1)).unwrap().into());
+        arr
+    }
+}
+
+#[wasm_bindgen]
+pub fn rgba_bytes_to_image(
+    bytes: Vec<u8>,
+    width: u32,
+    height: u32,
+    format: EncodeFormat,
+) -> ImageWithDHash {
+    let image = RgbaImage::from_raw(width, height, bytes).unwrap();
+
+    let d_hash = DHash::new(
+        image.as_bytes(),
+        image.width(),
+        image.height(),
+        image.get_pixel(0, 0).channels().len().try_into().unwrap(),
+    );
+
+    let encoded_image = encode_image_as(&image, format.into()).unwrap();
+
+    ImageWithDHash::new(encoded_image, d_hash.hash)
 }
 
 #[wasm_bindgen(start)]
