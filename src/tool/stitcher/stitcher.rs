@@ -461,7 +461,16 @@ impl ImageStitcher {
                     )
                 })
                 .max_by_key(|i| i.1.score)
-                .expect("at least one row");
+                .unwrap_or_else(|| {
+                    (
+                        vec![0; window_size],
+                        OverlapScore {
+                            score: u64::MAX,
+                            position: Position::default(),
+                            flipped: false,
+                        },
+                    )
+                });
 
             if best_rows_to_merge.1.score < min.1.score {
                 best_rows_to_merge = min;
