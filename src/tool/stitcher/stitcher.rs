@@ -39,7 +39,7 @@ impl ImageStitcher {
     }
 
     pub fn stitch(self) -> (RgbaImage, VecDeque<Position>) {
-        // let mut last_offset: OverlapScore = OverlapScore::default();
+        let mut last_offset: Option<&Position> = None;
         let mut final_image: Option<RgbaImage> = None;
         let mut stitch_positions: VecDeque<Position> = VecDeque::new();
 
@@ -53,10 +53,10 @@ impl ImageStitcher {
                         image2,
                         self.direction,
                         Order::Ordered,
-                        // &last_offset,
                         self.window_size,
                         &self.match_mode,
                         self.crop,
+                        last_offset,
                     );
 
                     let result = Self::stitch_images(
@@ -74,7 +74,7 @@ impl ImageStitcher {
                         false,
                     );
 
-                    // last_offset = region;
+                    last_offset = Some(stitch_positions.iter().next().unwrap());
                     final_image = Some(result);
                 }
             }
@@ -96,6 +96,7 @@ impl ImageStitcher {
                                 self.window_size,
                                 &self.match_mode,
                                 self.crop,
+                                None,
                             );
 
                             if region.score > best_region.1.score {
@@ -340,6 +341,7 @@ impl ImageStitcher {
         window_size: usize,
         match_mode: &MatchMode,
         crop: u32,
+        skip: Option<&Position>,
     ) -> OverlapScore {
         let (part1_check, part2_check) = match direction {
             CheckDirection::Vertical | CheckDirection::Sideways => (part1, part2),
@@ -354,28 +356,27 @@ impl ImageStitcher {
             ),
         };
 
-        // let skip_num = match direction {
-        //     CheckDirection::Horizontal => {
-        //         if skip.x >= 0 {
-        //             skip.x as usize
-        //         } else {
-        //             0
-        //         }
-        //     }
-        //     CheckDirection::Vertical | CheckDirection::Sideways => {
-        //         if skip.y >= 0 {
-        //             skip.y as usize
-        //         } else {
-        //             0
-        //         }
-        //     }
-        // };
+        let (skip_x, skip_y) = match skip {
+            Some(skip) => match direction {
+                CheckDirection::Horizontal => (i32::MIN, skip.x as usize),
+                CheckDirection::Vertical | CheckDirection::Sideways => (skip.x, skip.y as usize),
+            },
+            None => (i32::MIN, 0),
+        };
 
         let (horizontal_start, horizontal_move_end) = match direction {
             CheckDirection::Sideways => {
                 let width = part2_check.width().max(part1_check.width());
+                let start = (width - 1 - crop) as i32 * -1;
 
-                ((width - 1 - crop) as i32 * -1, (width - crop) as i32)
+                println!("Skip X: {}", skip_x);
+                println!("Skip Y: {}", skip_y);
+                println!("horizontal_start: {}", start);
+
+                (
+                    if skip_x > start { skip_x } else { start },
+                    (width - crop) as i32,
+                )
             }
             _ => (0, 0),
         };
@@ -398,7 +399,7 @@ impl ImageStitcher {
                 .rows()
                 .take((part1_check.height() - crop) as usize)
                 .enumerate()
-                // .skip(skip_num as usize)
+                .skip(skip_y)
                 .map(|p| (p.0 as isize, p.1))
                 .windows(window_size)
                 .par_bridge()
@@ -457,6 +458,7 @@ impl ImageStitcher {
                     window_size,
                     match_mode,
                     crop,
+                    skip,
                 );
 
                 overlap2.flipped = true;
