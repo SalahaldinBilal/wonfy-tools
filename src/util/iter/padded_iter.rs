@@ -97,6 +97,39 @@ where
     }
 }
 
+impl<I> DoubleEndedIterator for PaddedIter<I>
+where
+    I: DoubleEndedIterator,
+    I::Item: Clone,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.side == PaddingSide::End && self.padding_remaining > 0 {
+            self.padding_remaining -= 1;
+            return Some(self.padding_item.clone());
+        }
+
+        if !self.inner_exhausted {
+            match self.inner.next_back() {
+                Some(item) => return Some(item),
+                None => {
+                    self.inner_exhausted = true;
+
+                    if self.side == PaddingSide::End || self.padding_remaining == 0 {
+                        return None;
+                    }
+                }
+            }
+        }
+
+        if self.inner_exhausted && self.side == PaddingSide::Start && self.padding_remaining > 0 {
+            self.padding_remaining -= 1;
+            return Some(self.padding_item.clone());
+        }
+
+        None
+    }
+}
+
 impl<I> FusedIterator for PaddedIter<I>
 where
     I: FusedIterator,

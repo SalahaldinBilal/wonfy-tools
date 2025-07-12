@@ -315,17 +315,43 @@ impl ImageStitcher {
         let first_iter = row1.map(Self::pixel_as_value);
         let second_iter = row2.map(Self::pixel_as_value);
 
-        let first_iter = match padding {
-            ..0 => first_iter.pad_start(0, (padding * -1) as usize),
-            _ => first_iter.pad_end(0, padding as usize),
-        };
-        let second_iter = match padding {
-            ..0 => second_iter.pad_end(0, (padding * -1) as usize),
-            _ => second_iter.pad_start(0, padding as usize),
+        let (first_to_match, first_collection) = match padding {
+            ..0 => {
+                let padding = (padding * -1) as usize;
+
+                (
+                    itertools::Either::Left(first_iter.clone().rev().take(padding)),
+                    itertools::Either::Right(first_iter),
+                )
+            }
+            _ => (
+                itertools::Either::Right(first_iter.clone().take(padding as usize)),
+                itertools::Either::Left(first_iter.skip(padding as usize)),
+            ),
         };
 
-        score += first_iter
-            .zip(second_iter)
+        let (second_to_match, second_collection) = match padding {
+            ..0 => {
+                let padding = (padding * -1) as usize;
+
+                (
+                    itertools::Either::Right(second_iter.clone().take(padding)),
+                    itertools::Either::Left(second_iter.skip(padding)),
+                )
+            }
+            _ => (
+                itertools::Either::Left(second_iter.clone().rev().take(padding as usize)),
+                itertools::Either::Right(second_iter),
+            ),
+        };
+
+        score += first_to_match
+            .zip(second_to_match)
+            .map(|(p1, p2)| p1 + p2)
+            .sum::<u64>();
+
+        score += first_collection
+            .zip(second_collection)
             .map(|(p1, p2)| p1.abs_diff(p2))
             .sum::<u64>();
 
