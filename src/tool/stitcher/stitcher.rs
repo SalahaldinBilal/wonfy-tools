@@ -395,10 +395,6 @@ impl ImageStitcher {
                 let width = part2_check.width().max(part1_check.width());
                 let start = (width - 1 - crop) as i32 * -1;
 
-                println!("Skip X: {}", skip_x);
-                println!("Skip Y: {}", skip_y);
-                println!("horizontal_start: {}", start);
-
                 (
                     if skip_x > start { skip_x } else { start },
                     (width - crop) as i32,
