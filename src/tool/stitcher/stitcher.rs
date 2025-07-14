@@ -6,7 +6,7 @@ use rayon::iter::{ParallelBridge, ParallelIterator};
 
 use crate::util::{
     image::{ImageCrop, edge_detection},
-    iter::{IterWindows as _, padded_iter::PadExt as _},
+    iter::IterWindows as _,
 };
 
 use super::params::{CheckDirection, MatchMode, Order, OverlapScore, Position};
@@ -92,7 +92,6 @@ impl ImageStitcher {
                                 image2,
                                 self.direction,
                                 Order::Unordered,
-                                // &Default::default(),
                                 self.window_size,
                                 &self.match_mode,
                                 self.crop,
@@ -363,7 +362,6 @@ impl ImageStitcher {
         part2: &RgbaImage,
         direction: CheckDirection,
         order: Order,
-        // skip: &Position,
         window_size: usize,
         match_mode: &MatchMode,
         crop: u32,
@@ -485,7 +483,6 @@ impl ImageStitcher {
                     part1,
                     direction,
                     Order::Ordered,
-                    // skip,
                     window_size,
                     match_mode,
                     crop,
