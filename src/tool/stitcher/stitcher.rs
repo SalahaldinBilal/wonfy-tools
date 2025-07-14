@@ -380,7 +380,7 @@ impl ImageStitcher {
             ),
         };
 
-        let (skip_x, skip_y) = match skip {
+        let (_skip_x, skip_y) = match skip {
             Some(skip) => match direction {
                 CheckDirection::Horizontal => (i32::MIN, skip.x as usize),
                 CheckDirection::Vertical | CheckDirection::Sideways => (skip.x, skip.y as usize),
@@ -393,10 +393,7 @@ impl ImageStitcher {
                 let width = part2_check.width().max(part1_check.width());
                 let start = (width - 1 - crop) as i32 * -1;
 
-                (
-                    if skip_x > start { skip_x } else { start },
-                    (width - crop) as i32,
-                )
+                (start, (width - crop) as i32)
             }
             _ => (0, 0),
         };
