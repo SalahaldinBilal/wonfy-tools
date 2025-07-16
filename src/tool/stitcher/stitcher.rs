@@ -367,9 +367,11 @@ impl ImageStitcher {
         crop: u32,
         skip: Option<&Position>,
     ) -> OverlapScore {
+        use CheckDirection as CD;
+
         let (part1_check, part2_check) = match direction {
-            CheckDirection::Vertical | CheckDirection::Sideways => (part1, part2),
-            CheckDirection::Horizontal => (&rotate90(part1), &rotate90(part2)),
+            CD::Vertical | CD::Sideways | CD::SidewaysRight | CD::SidewaysLeft => (part1, part2),
+            CD::Horizontal => (&rotate90(part1), &rotate90(part2)),
         };
 
         let (part1_check, part2_check) = match match_mode {
@@ -382,18 +384,32 @@ impl ImageStitcher {
 
         let (_skip_x, skip_y) = match skip {
             Some(skip) => match direction {
-                CheckDirection::Horizontal => (i32::MIN, skip.x as usize),
-                CheckDirection::Vertical | CheckDirection::Sideways => (skip.x, skip.y as usize),
+                CD::Horizontal => (i32::MIN, skip.x as usize),
+                CD::Vertical | CD::Sideways | CD::SidewaysRight | CD::SidewaysLeft => {
+                    (skip.x, skip.y as usize)
+                }
             },
             None => (i32::MIN, 0),
         };
 
         let (horizontal_start, horizontal_move_end) = match direction {
-            CheckDirection::Sideways => {
+            CD::Sideways | CD::SidewaysRight | CD::SidewaysLeft => {
                 let width = part2_check.width().max(part1_check.width());
                 let start = (width - 1 - crop) as i32 * -1;
+                let end = (width - crop) as i32;
 
-                (start, (width - crop) as i32)
+                (
+                    match direction {
+                        CD::Sideways | CD::SidewaysLeft => start,
+                        CD::SidewaysRight => 0,
+                        _ => unreachable!(),
+                    },
+                    match direction {
+                        CD::SidewaysRight | CD::Sideways => end,
+                        CD::SidewaysLeft => 0,
+                        _ => unreachable!(),
+                    },
+                )
             }
             _ => (0, 0),
         };
@@ -436,11 +452,13 @@ impl ImageStitcher {
                     );
 
                     let position = match direction {
-                        CheckDirection::Vertical | CheckDirection::Sideways => Position {
-                            y: indices[0] as i32,
-                            x: horizontal_offset,
-                        },
-                        CheckDirection::Horizontal => Position {
+                        CD::Vertical | CD::Sideways | CD::SidewaysRight | CD::SidewaysLeft => {
+                            Position {
+                                y: indices[0] as i32,
+                                x: horizontal_offset,
+                            }
+                        }
+                        CD::Horizontal => Position {
                             x: indices[0] as i32,
                             y: 0,
                         },
@@ -505,16 +523,18 @@ impl ImageStitcher {
         crop: u32,
         crop_direction: CheckDirection,
     ) -> RgbaImage {
+        use CheckDirection::*;
+
         let crop = match crop_direction {
-            CheckDirection::Vertical => ImageCrop {
+            Vertical => ImageCrop {
                 bottom: crop,
                 ..Default::default()
             },
-            CheckDirection::Horizontal => ImageCrop {
+            Horizontal => ImageCrop {
                 right: crop,
                 ..Default::default()
             },
-            CheckDirection::Sideways => {
+            Sideways | SidewaysRight | SidewaysLeft => {
                 let mut crop_obj = ImageCrop {
                     bottom: crop,
                     ..Default::default()

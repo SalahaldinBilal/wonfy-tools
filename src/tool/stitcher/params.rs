@@ -112,6 +112,8 @@ pub enum CheckDirection {
     Vertical,
     Horizontal,
     Sideways,
+    SidewaysRight,
+    SidewaysLeft,
 }
 
 impl FromStr for CheckDirection {
@@ -122,13 +124,17 @@ impl FromStr for CheckDirection {
             "v" | "V" | "Vertical" | "vertical" => Ok(CheckDirection::Vertical),
             "h" | "H" | "Horizontal" | "horizontal" => Ok(CheckDirection::Horizontal),
             "s" | "S" | "Sideways" | "sideways" => Ok(CheckDirection::Sideways),
+            "sr" | "SR" | "SidewaysRight" | "sidewaysRight" => Ok(CheckDirection::SidewaysRight),
+            "sl" | "SL" | "SidewaysLeft" | "sidewaysLeft" => Ok(CheckDirection::SidewaysLeft),
             value => Err(UnknownError {
                 name: "CheckDirection".into(),
                 value: value.into(),
                 expected: unknown_error_expected!(
                     "v" | "V" | "Vertical" | "vertical" => "Vertical",
                     "h" | "H" | "Horizontal" | "horizontal" => "Horizontal",
-                    "s" | "S" | "Sideways" | "sideways" => "Sideways"
+                    "s" | "S" | "Sideways" | "sideways" => "Sideways",
+                    "sr" | "SR" | "SidewaysRight" | "sidewaysRight" => "SidewaysRight",
+                    "sl" | "SL" | "SidewaysLeft" | "sidewaysLeft" => "SidewaysLeft"
                 ),
             }),
         }
@@ -149,7 +155,7 @@ impl FromStr for Order {
             "o" | "O" | "Ordered" | "ordered" => Ok(Order::Ordered),
             "u" | "U" | "Unordered" | "unordered" => Ok(Order::Unordered),
             value => Err(UnknownError {
-                name: "CheckDirection".into(),
+                name: "Order".into(),
                 value: value.into(),
                 expected: unknown_error_expected!(
                     "o" | "O" | "Ordered" | "ordered" => "Ordered",
