@@ -14,18 +14,25 @@ mod cli {
     #[derive(Parser, Debug)]
     #[command(version, about, long_about = None)]
     struct Args {
+        /// List of files to stitch. Can be a directory or multiple files. Has to contain at least two files.
         #[arg(short, long, required = true, num_args = 1..)]
         files_to_stitch: Vec<String>,
-        #[arg(short, long)]
+        /// Direction of the stitch operation.
+        #[arg(short, long, value_enum)]
         direction: CheckDirection,
-        #[arg(short, long)]
-        order: Order,
+        /// Are the files ordered or not, defaults to Ordered.
+        #[arg(short, long, value_enum)]
+        order: Option<Order>,
+        /// Output file path. If not provided, a default name will be generated.
         #[arg(long)]
-        output_dir: Option<String>,
+        output_dir: Option<PathBuf>,
+        /// Number of rows to match at once, defaults to 1.
         #[arg(short, long)]
         window_size: Option<usize>,
-        #[arg(short, long)]
+        /// Match Mode, defaults to Edges.
+        #[arg(short, long, value_enum)]
         match_mode: Option<MatchMode>,
+        /// Number of pixels to crop the images while matching, defaults to 0.
         #[arg(short, long)]
         crop_padding: Option<u32>,
     }
