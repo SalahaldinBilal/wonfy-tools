@@ -100,13 +100,17 @@ mod cli {
 
         let images: Result<Vec<_>, _> = files_to_stitch
             .par_iter()
-            .map(|path| image::open(path).map(|img| img.to_rgba8()))
+            .map(|path| {
+                image::open(path)
+                    .map(|img| img.to_rgba8())
+                    .map_err(|err| (path.to_string_lossy(), err))
+            })
             .collect();
 
         let images = match images {
             Ok(images) => images,
-            Err(err) => {
-                eprintln!("Failed to load file: {:#?}", err);
+            Err((path, err)) => {
+                eprintln!("Failed to load image [{}]: {:#?}", path, err);
                 return;
             }
         };
