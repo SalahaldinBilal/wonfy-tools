@@ -1,6 +1,7 @@
 #[cfg(feature = "cli")]
 mod cli {
     use std::borrow::Cow;
+    use std::cmp::Ordering;
     use std::fs::read_dir;
     use std::path::PathBuf;
 
@@ -10,6 +11,7 @@ mod cli {
     use rayon::iter::IntoParallelRefIterator;
     use rayon::iter::ParallelIterator;
     use wonfy_tools::tool::stitcher::{CheckDirection, ImageStitcherBuilder, MatchMode, Order};
+    use wonfy_tools::util::string::parsing::parse_first_number;
 
     #[derive(Parser, Debug)]
     #[command(version, about, long_about = None)]
@@ -91,7 +93,23 @@ mod cli {
         };
 
         let files_to_stitch = match files_to_stitch {
-            Ok(files) => files,
+            Ok(mut files) => {
+                files.sort_by(|a, b| {
+                    let first_name = a.file_stem().expect("exists").to_string_lossy();
+                    let second_name = b.file_stem().expect("exists").to_string_lossy();
+
+                    let first_number = parse_first_number(&first_name);
+                    let second_number = parse_first_number(&second_name);
+
+                    match (first_number, second_number) {
+                        (Some(first), Some(second)) => first.cmp(&second),
+                        (Some(_), None) => Ordering::Less,
+                        (None, Some(_)) => Ordering::Greater,
+                        (None, None) => first_name.cmp(&second_name),
+                    }
+                });
+                files
+            }
             Err(err) => {
                 eprintln!("Error: {}", err);
                 return;
