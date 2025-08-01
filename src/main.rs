@@ -62,7 +62,7 @@ mod cli {
                             if files.len() > 1 {
                                 Ok(files)
                             } else {
-                                Err(Cow::Borrowed(&format!(
+                                Err(Cow::Owned(format!(
                                     "Directory [{}] must contain at least two files to stitch.",
                                     path.display()
                                 )))
